@@ -1,4 +1,5 @@
 using CodeChallengeAPI.Service;
+using TwitterService;
 
 namespace CodeChallengeAPI
 {
@@ -26,8 +27,9 @@ namespace CodeChallengeAPI
             builder.Services.AddSwaggerGen();
 
             //Add application services
-            builder.Services.AddSingleton<ITwitterAuthService, TwitterAuthService>();
-            builder.Services.AddSingleton<ITwitterStreamService, TwitterStreamService>();
+            builder.Services.AddTwitterServices();
+            //builder.Services.AddSingleton<ITwitterAuthService, TwitterAuthService>();
+            //builder.Services.AddSingleton<ITwitterStreamService, TwitterStreamService>();
 
             var app = builder.Build();
 
@@ -46,7 +48,7 @@ namespace CodeChallengeAPI
             //Start the twitter tweet streaming process as the application starts up. The streaming service runs as a
             //singleton instance inside the application. This is so the tweet streaming service does not run, for example, per request
             //for now.
-            var twitterStreamService = app.Services.GetRequiredService<ITwitterStreamService>();
+            var twitterStreamService = app.Services.GetRequiredService<TwitterService.Service.ITwitterStreamService>();
             await twitterStreamService.StartStream();
 
             app.Run();

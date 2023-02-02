@@ -1,6 +1,6 @@
-using CodeChallengeAPI.Models;
-using CodeChallengeAPI.Service;
 using Microsoft.AspNetCore.Mvc;
+using TwitterService.Model;
+using TwitterService.Service;
 
 namespace CodeChallengeAPI.Controllers
 {
