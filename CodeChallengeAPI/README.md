@@ -12,13 +12,20 @@
 1. Right click on the CodeChallengeAPI project and select Manage User Secrets
 2. In the secrets.json file place the json below. You will need to get the specified values from an application you registered in the Twitter developer portal.
     see: https://developer.twitter.com/
+3. You will need to use either the ConsumerKey/ConsumerSecret combination or the BearerToken by itself. There is no need to use both the ConsumerKey/ConsumerSecret combination and BearerToken.
+See: https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-only
 
 ```json
 {
     "TwitterAuthConfig": {
+        "BearerTokenRequestEndpoint": "https://api.twitter.com/oauth2/token",
         "ApplicationName": "YOUR TWITTER APP NAME HERE",
-        "ConsumerKey": "YOUR TWITTER CONSUMER KEY HERE",
-        "ConsumerSecret": "YOUR TWITTER CONSUMER SECRET HERE"
+        "ConsumerKey": "YOUR TWITTER APPLICATION CONSUMER KEY HERE",
+        "ConsumerSecret": "YOUR TWITTER APPLICATION CONSUMER SECRET HERE",
+        "BearerToken": "YOUR TWITTER APPLICATION BEARER TOKEN GOES HERE"
+    },
+    "TwitterConfig": {
+        "VolumeStreamEndpoint": "https://api.twitter.com/2/tweets/sample/stream"
     }
 }
 ```

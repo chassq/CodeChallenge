@@ -1,6 +1,5 @@
 ﻿using CodeChallengeAPI.Config;
 using CodeChallengeAPI.Models;
-using System.Text;
 using System.Text.Json;
 
 namespace CodeChallengeAPI.Service
@@ -18,7 +17,7 @@ namespace CodeChallengeAPI.Service
 
         protected readonly IConfiguration _configuration;
 
-        private readonly TwitterAuthConfig _twitterAuthConfig;
+        private readonly TwitterConfig _twitterConfig;
 
         private bool _streamIsActive = false;
 
@@ -26,33 +25,39 @@ namespace CodeChallengeAPI.Service
 
         private readonly List<TweetHashtag> _hashTagsStore = new();
 
-        public TwitterStreamService(IServiceProvider services, IConfiguration configuration)
+        public TwitterStreamService(IServiceProvider services
+            , IConfiguration configuration)
         {
             _services = services;
 
             _configuration = configuration;
 
-            _twitterAuthConfig = _configuration.GetSection(nameof(TwitterAuthConfig))?.Get<TwitterAuthConfig>()
-                                            ?? throw new ArgumentNullException("The twitter authentication configuration is not set properly. Please see the readme.md file at the root of this project for instructions.");
+            _twitterConfig = _configuration.GetSection(nameof(TwitterConfig))?.Get<TwitterConfig>()
+                                ?? throw new ArgumentNullException("The twitter configuration is not set properly. Please see the readme.md file at the root of this project for instructions.");
         }
 
         public async Task StartStream()
         {
+            //Run the streaming on a worker thread in order to not block other service requests.
             _ = Task.Run(async () =>
             {
                 using var scope = _services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-                var logger = scope.ServiceProvider.GetService<ILogger>();
 
-                try
-                {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<ITwitterStreamService>>();
+
+                var authService = scope.ServiceProvider.GetRequiredService<ITwitterAuthService>();
+
+                try {
+
                     // Create a new HttpClient
                     var httpClient = new HttpClient();
 
-                    httpClient.DefaultRequestHeaders.Add("User-Agent", _twitterAuthConfig.ApplicationName);
+                    httpClient.DefaultRequestHeaders.Add("User-Agent", authService.TwitterApplicationName);
 
-                    var url = "https://api.twitter.com/2/tweets/sample/stream?tweet.fields=entities&expansions=author_id&user.fields=created_at";
+                    //TODO - Investigate parameterization of the rules query string
+                    var url = $"{_twitterConfig.VolumeStreamEndpoint}?tweet.fields=entities&expansions=author_id&user.fields=created_at";
 
-                    var bearerToken = await GetBearerToken();
+                    var bearerToken = await authService.GetBearerToken();
 
                     httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearerToken);
 
@@ -70,22 +75,30 @@ namespace CodeChallengeAPI.Service
 
                     while (_streamIsActive)
                     {
+                        //TODO - Investigate rate limiting behaviors in order to handle 429 error codes based on the application request rate limits. 
+                        //See https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-only
                         var line = await reader.ReadLineAsync();
 
                         if (!string.IsNullOrWhiteSpace(line))
                         {
                             var tweet = JsonSerializer.Deserialize<Tweet>(line);
 
-                            if(tweet != null) _tweetCounter++;
+                            if(tweet != null) _tweetCounter++; //If a tweet exists then increment the Tweet count
 
+                            //Verify is the tweet contains hashtags and if so process them.
                             var hashtags = tweet?.TweetData?.TweetEntity?.TweetHashTags;
                             if (hashtags != null && hashtags.Any())
                             {    
                                 foreach( var hashtag in hashtags)
                                 {
-                                    if (_hashTagsStore.Any(t => !string.IsNullOrWhiteSpace(t.Tag) && t.Tag.Equals(hashtag.Tag, StringComparison.OrdinalIgnoreCase)))
+                                    //If a hashtag already exists in the hashtag store then increment the instance count of the existing hashtag.
+                                    //Otherwise add the new hashtag to the hashtag store with a count of 1.
+                                    if (_hashTagsStore.Any(t => !string.IsNullOrWhiteSpace(t.Tag) 
+                                                                && t.Tag.Equals(hashtag.Tag, StringComparison.OrdinalIgnoreCase)))
                                     {
-                                        var updateTag = _hashTagsStore.Where(t => !string.IsNullOrWhiteSpace(t.Tag) && t.Tag.Equals(hashtag.Tag, StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
+                                        //Existing hashtag handling
+                                        var updateTag = _hashTagsStore.Where(t => !string.IsNullOrWhiteSpace(t.Tag) 
+                                                                                    && t.Tag.Equals(hashtag.Tag, StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
                                         if(updateTag != null)
                                         {
                                             updateTag.Count++;
@@ -93,6 +106,7 @@ namespace CodeChallengeAPI.Service
                                     }
                                     else
                                     {
+                                        //New hashtag handling
                                         hashtag.Count++;
                                         _hashTagsStore.Add(hashtag);
                                     }
@@ -111,40 +125,24 @@ namespace CodeChallengeAPI.Service
             await Task.Delay(2000).ConfigureAwait(false);
         }
 
-        async Task<string> GetBearerToken()
-        {
-            var consumerKey = _twitterAuthConfig.ConsumerKey;
-            var consumerSecret = _twitterAuthConfig.ConsumerSecret;
-            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes(consumerKey + ":" + consumerSecret));
-            var httpClient = new HttpClient();
-
-            httpClient.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials);
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "SqCodeChallenge");
-
-            var response = await httpClient.PostAsync("https://api.twitter.com/oauth2/token",
-                new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded"));
-
-            response.EnsureSuccessStatusCode();
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            var obj = JsonSerializer.Deserialize<TwitterAuthToken>(responseContent);
-
-            return obj.AccessToken;
-
-        }
-
+        /// <summary>
+        /// Method will set the streaming service to be in an inactive state which will stop the streaming.
+        /// </summary>
         public void StopStream()
         {
             _streamIsActive = false;
         }
 
+        /// <summary>
+        /// Method returns a current summary of the streaming data.
+        /// </summary>
         public TweetSummary GetSummary()
         {
-            var retVal = new TweetSummary();
-            retVal.TotalCount = _tweetCounter;
-            retVal.TopTenHashtags = _hashTagsStore.OrderByDescending(e=>e.Count).Take(10).ToList();
-            return retVal;
+            return new TweetSummary
+            {
+                TotalCount = _tweetCounter,
+                TopTenHashtags = _hashTagsStore.OrderByDescending(e => e.Count).Take(10).ToList()
+            };
         }
     }
 }

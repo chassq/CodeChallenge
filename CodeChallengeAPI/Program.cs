@@ -19,11 +19,14 @@ namespace CodeChallengeAPI
 
             //Add services to composition root
             builder.Services.AddControllers();
+            builder.Logging.AddDebug();
 
             //Add swagger support
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //Add application services
+            builder.Services.AddSingleton<ITwitterAuthService, TwitterAuthService>();
             builder.Services.AddSingleton<ITwitterStreamService, TwitterStreamService>();
 
             var app = builder.Build();
@@ -41,7 +44,8 @@ namespace CodeChallengeAPI
             app.MapControllers();
 
             //Start the twitter tweet streaming process as the application starts up. The streaming service runs as a
-            //singleton instance inside the application.
+            //singleton instance inside the application. This is so the tweet streaming service does not run, for example, per request
+            //for now.
             var twitterStreamService = app.Services.GetRequiredService<ITwitterStreamService>();
             await twitterStreamService.StartStream();
 
