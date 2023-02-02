@@ -36,10 +36,11 @@ See: https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-
    ![Query Tweets](Query.jpg)
 
    - **StopTwitterVolumeStream** - This will stop the tweet streaming.
-   ![Query Tweets](StopTweets.jpg)
+   ![Stop Stream](StopTweets.jpg)
 
    - **RestartTwitterVolumeStream** - This will restart the tweet streaming.
-   ![Query Tweets](RestartTweets.jpg)
+   ![Restart Stream](RestartTweets.jpg)
 
-## Unit Test
-Unit test can be run from the VS 2022 test explorer.
+## Unit Tests
+Unit tests can be run from the VS 2022 test explorer.
+ ![Unit Tests](UnitTest.jpg)

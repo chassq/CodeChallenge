@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		RestartTweets.jpg = RestartTweets.jpg
 		StopTweets.jpg = StopTweets.jpg
+		..\..\..\OneDrive\Desktop\UnitTest.jpg = ..\..\..\OneDrive\Desktop\UnitTest.jpg
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitterServiceTest", "TwitterServiceTest\TwitterServiceTest.csproj", "{83F9CA76-0864-4154-AD54-472D68896626}"
