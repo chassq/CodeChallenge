@@ -85,7 +85,7 @@ namespace TwitterService.Service
 
                     _streamIsActive = true;
 
-                    using var reader = new StreamReader(stream); 
+                    using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, true, 1024, true); 
 
                     while (_streamIsActive)
                     {
