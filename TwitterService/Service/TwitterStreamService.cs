@@ -9,6 +9,7 @@ namespace TwitterService.Service
 {
     public interface ITwitterStreamService
     {
+        bool IsStreamActive { get; }
         Task StartStream();
         void StopStream();
         TweetSummary GetSummary();
@@ -21,6 +22,11 @@ namespace TwitterService.Service
         protected readonly IConfiguration _configuration;
 
         private readonly TwitterConfig _twitterConfig;
+
+        public bool IsStreamActive 
+        { 
+            get { return _streamIsActive; } 
+        }
 
         private bool _streamIsActive = false;
 
@@ -39,6 +45,11 @@ namespace TwitterService.Service
                                 ?? throw new ArgumentNullException("The twitter configuration is not set properly. Please see the readme.md file at the root of this project for instructions.");
         }
 
+        /// <summary>
+        /// Method will start the streaming service and begin receiving tweets. This method will put the stream listener
+        /// on a worker thread and return after a small delay.
+        /// </summary>
+        /// <returns></returns>
         public async Task StartStream()
         {
             //Run the streaming on a worker thread in order to not block other service requests.
