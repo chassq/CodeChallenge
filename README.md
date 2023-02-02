@@ -1,7 +1,5 @@
 ﻿# Code Challenge Project
 
-## To Get The Project Working
-
 ## Dependencies: 
 1. .NET 7
 1. VS 2022
@@ -35,10 +33,10 @@ See: https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-
 1. Make sure the CodeChallengeAPI project is set as the startup project and start the project with or without debugging.
 2. A swagger API definition page should appear (https://localhost:7121/swagger/index.html). This will let you demo 3 actions
    - **QueryTweetInfo** - Will return the Total Count of Tweets and the Top 10 requested Hashtags as a json representation.
-   ![Query Tweets](Images/Query.jpg)
+   ![Query Tweets](Query.jpg)
 
    - **StopTwitterVolumeStream** - This will stop the tweet streaming.
-   ![Query Tweets](Images/StopTweets.jpg)
+   ![Query Tweets](StopTweets.jpg)
 
    - **RestartTwitterVolumeStream** - This will restart the tweet streaming.
-   ![Query Tweets](Images/RestartTweets.jpg)
+   ![Query Tweets](RestartTweets.jpg)
